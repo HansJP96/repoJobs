@@ -1,0 +1,32 @@
+{
+    "pipelineJobs": [
+        {
+            "jobName": "Prueba webhook trigger",
+            "jobDescription": "This is a test job sonar webhook",
+            "view": "webhook",
+            "pipelineScriptPath": "jenkins/build_test/Jenkinsfile",
+            "git": {
+                "repositoryId": "practica_webhooks",
+                "repositoryUrl": "https://github.com/HansJP96/practica_kubernetes1.git"
+            },
+            "logRotator": {
+                "daysToKeep": 10,
+                "numToKeep": 5
+            }
+        },
+        {
+            "jobName": "Prueba push docker image",
+            "jobDescription": "This is a test job docker",
+            "view": "webhook",
+            "pipelineScriptPath": "jenkins/push_dockerhub/Jenkinsfile",
+            "git": {
+                "repositoryId": "practica_webhooks",
+                "repositoryUrl": "https://github.com/HansJP96/practica_kubernetes1.git"
+            },
+            "logRotator": {
+                "daysToKeep": 10,
+                "numToKeep": 5
+            }
+        }
+    ]
+}
