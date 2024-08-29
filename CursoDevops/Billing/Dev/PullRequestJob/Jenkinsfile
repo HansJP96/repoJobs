@@ -1,0 +1,108 @@
+pipeline {
+	agent any
+	triggers {
+		GenericTrigger(
+			genericVariables: [
+			[key: 'pr_title', value: '$.pullrequest.title', defaultValue: 'null'],
+			[key: 'current_status', value: '$.action', defaultValue: 'null'],
+			],
+			regexpFilterText:'$current_status',
+			regexpFilterExpression:'^opened|reopened|synchronize$',
+			causeString: 'Generic Cause',
+			token: 'secrettoken',
+			tokenCredentialId: '',
+			printContributedVariables: false,
+			printPostContent: false,
+			silentResponse: false
+		)
+	}
+	environment {
+		GIT_URL = 'https://github.com/HansJP96/practica_kubernetes1.git'
+		CREDENTIALS_ID = 'GitHub_Autenticacion_SSH'
+	}
+	stages {
+		stage('Checkout') {
+            steps {
+                checkout([
+                    $class: 'GitSCM',
+                    branches: [[name: 'origin/feature/*']],
+                    userRemoteConfigs: [[
+                        name: 'origin',
+                        url: env.GIT_URL,
+                        credentialsId: env.CREDENTIALS_ID,
+                        refspec: '+refs/pull/*/head:refs/remotes/origin/pr/*'
+                    ]],
+                    extensions: [
+                        [$class: 'WipeWorkspace'],
+                        [$class: 'GitSCMStatusChecksExtension', name: 'Jenkins', skip: false, unstableBuildNeutral: false, suppressLogs: false, skipProgressUpdates: false]
+                    ]
+                ])
+            }
+        }
+		
+        stage('Build and Test') {
+            steps {
+                script {
+                    switch (current_status) {
+                        case 'opened':
+                        case 'reopened':
+                        case 'synchronize':
+                            echo "New PR created/updated: ${pr_title}"
+                            echo "Build Init"
+                            sh '''
+                                cd billing
+                                mvn clean install -DskipTests
+                            '''
+                            break
+                        default:
+                            echo "Condition not met: Skipping this step."
+                            error("Skipping build")
+                    }
+                }
+            }
+        }
+		
+		stage('Test') {
+			steps {
+				script {
+					echo "Running tests"
+					sh '''
+						cd billing
+						mvn test
+					'''
+				}
+			}
+		}
+
+        stage('SonarQube Analysis') {
+            steps {
+                script {
+                    withSonarQubeEnv('SonarQube Server') {
+                        sh """
+                        sonar-scanner \
+                          -Dsonar.projectKey=sonarqube \
+                          -Dsonar.sources=billing/src/main/java \
+                          -Dsonar.java.binaries=billing/target/classes \
+                          -X
+                        """
+                    }
+                }
+            }
+        }
+		
+		post {
+			always {
+				script {
+					def commitStatusSetter = [$class: 'GitHubCommitStatusSetter',
+						commitShaSource: [$class: 'BuildDataRevisionShaSource'],
+						reposSource: [$class: 'AnyDefinedRepositorySource'],
+						contextSource: [$class: 'DefaultCommitContextSource'],
+						statusResultSource: [$class: 'DefaultStatusResultSource'],
+						statusBackrefSource: [$class: 'BuildRefBackrefSource']
+					]
+					step(commitStatusSetter)
+				}
+			}
+		}
+    }
+ }
