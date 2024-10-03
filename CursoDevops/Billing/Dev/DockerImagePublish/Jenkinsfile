@@ -4,7 +4,7 @@ pipeline {
       		yamlFile 'prueba.yaml'
       		retries 2
     	}
-  
+    }
 
     environment {
         DOCKER_IMAGE_NAME = 'hanji96/billingapp-backend'
@@ -44,23 +44,21 @@ pipeline {
             }
         }
 
-        stages {
-    		stage('Build with Kaniko') {
-      		environment {
-        		PATH = "/busybox:/kaniko:$PATH"
-      		}
-      			steps {
-        			container(name: 'kaniko', shell: '/busybox/sh') {
-			
-          			sh """#!/busybox/sh
-            			/kaniko/executor --dockerfile `pwd`/${env.DOCKERFILE_DIR} --context `pwd` --verbosity debug \
-            			--destination ${env.DOCKER_IMAGE_NAME}:${env.BUILD_TAG} --destination ${env.DOCKER_IMAGE_NAME}:latest
-          			"""
-        			}
-      			}
-    		}
+       
+		stage('Build with Kaniko') {
+  		environment {
+    		PATH = "/busybox:/kaniko:$PATH"
   		}
+  			steps {
+    			container(name: 'kaniko', shell: '/busybox/sh') {
 		
+      			sh """#!/busybox/sh
+        			/kaniko/executor --dockerfile `pwd`/${env.DOCKERFILE_DIR} --context `pwd` --verbosity debug \
+        			--destination ${env.DOCKER_IMAGE_NAME}:${env.BUILD_TAG} --destination ${env.DOCKER_IMAGE_NAME}:latest
+      			"""
+    			}
+  			}
+		}
     }
 
     post {
