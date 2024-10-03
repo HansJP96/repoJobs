@@ -12,6 +12,8 @@ spec:
                     values:
                       - slave
   containers:
+  - name: jnlp
+    workingDir: /home/jenkins
   - name: maven 
     workingDir: /home/jenkins
     image: maven:3.9.9-eclipse-temurin-17-alpine
