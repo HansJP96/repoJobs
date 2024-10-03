@@ -2,12 +2,10 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_CLOUD = 'Dockerhub_Connect'
-		DOCKER_CREDENTIALS_ID = 'Dockerhub_Password'
         DOCKER_IMAGE_NAME = 'hanji96/billingapp-backend'
         POM_PATH = 'billing/pom.xml'
-        DOCKERFILE_DIR = 'billing/'
-        BUILD_TAG = "1.1.${env.BUILD_NUMBER}"
+        DOCKERFILE_DIR = 'billing/Dockerfile'
+        BUILD_TAG = "2.1.${env.BUILD_NUMBER}"
     }
 
     triggers {
@@ -31,36 +29,33 @@ pipeline {
 
         stage('Build Project') {
             steps {
-                script {
+                container(name: 'maven') {
+                	sh 'ls -la'
                     // Compila el proyecto sin ejecutar las pruebas
-                    sh '''
+                    sh """
                         mvn clean package -DskipTests -f ${env.POM_PATH}
-                    '''
+                    """
                 }
             }
         }
 
-        stage('Docker Build and Push') {
-            steps {
-                script {
-					docker.withDockerServer(env.DOCKER_CLOUD) {
-						docker.withDockerRegistry('', env.DOCKER_CREDENTIALS_ID) {
-							def app = docker.build("${env.DOCKER_IMAGE_NAME}:${env.BUILD_TAG}", "${env.DOCKERFILE_DIR}")
-							app.push("${env.BUILD_TAG}")
-							app.push("latest")
-						}
-					}
-                }
-            }
-        }
+        stages {
+    		stage('Build with Kaniko') {
+      		environment {
+        		PATH = "/busybox:/kaniko:$PATH"
+      		}
+      			steps {
+        			container(name: 'kaniko', shell: '/busybox/sh') {
+			
+          			sh """#!/busybox/sh
+            			/kaniko/executor --dockerfile `pwd`/${env.DOCKERFILE_DIR} --context `pwd` --verbosity debug \
+            			--destination ${env.DOCKER_IMAGE_NAME}:${env.BUILD_TAG} --destination ${env.DOCKER_IMAGE_NAME}:latest
+          			"""
+        			}
+      			}
+    		}
+  		}
 		
-		stage('Cleanup Docker Images') {
-            steps {
-                script {
-                    docker.image("${env.DOCKER_IMAGE_NAME}:${env.BUILD_TAG}").remove()
-                }
-            }
-        }
     }
 
     post {
