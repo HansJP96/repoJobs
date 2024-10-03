@@ -1,5 +1,10 @@
 pipeline {
-    agent any
+    agent {
+    	kubernetes {
+      		yamlFile 'prueba.yaml'
+      		retries 2
+    	}
+  
 
     environment {
         DOCKER_IMAGE_NAME = 'hanji96/billingapp-backend'
