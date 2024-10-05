@@ -1,5 +1,5 @@
 // Creación del pipeline job usando el nombre proporcionado
-pipelineJob("${DIRECTORY_PATH}") {
+pipelineJob("DIRECTORY_PATH") {
     description("Pipeline configurado dinámicamente")
     
     // Configurar el SCM para que apunte a tu repositorio
@@ -14,7 +14,7 @@ pipelineJob("${DIRECTORY_PATH}") {
                     branch("main") // Rama que deseas escuchar
                 }
             }
-            scriptPath("${JENKINSFILE_PATH}") // Ruta al Jenkinsfile dentro del repositorio
+            scriptPath("JENKINSFILE_PATH") // Ruta al Jenkinsfile dentro del repositorio
         }
     }
     
