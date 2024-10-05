@@ -1,5 +1,11 @@
+println "Ejecutando ${env.JOB_NAME}"
+println "Ejecutando 2 ${env.WORKSPACE}"
+println("script directory: ${new File(__FILE__).parent}")
+job_path = "${new File(__FILE__).parent}"
+jenkinsfile = job_path + "/Jenkinsfile"
+
 // Creación del pipeline job usando el nombre proporcionado
-pipelineJob("${dir_path}") {
+pipelineJob(job_path) {
     description("Pipeline configurado dinámicamente")
     
     // Configurar el SCM para que apunte a tu repositorio
@@ -14,7 +20,7 @@ pipelineJob("${dir_path}") {
                     branch("main") // Rama que deseas escuchar
                 }
             }
-            scriptPath(jenkinsfile_path) // Ruta al Jenkinsfile dentro del repositorio
+            scriptPath(jenkinsfile) // Ruta al Jenkinsfile dentro del repositorio
         }
     }
     
