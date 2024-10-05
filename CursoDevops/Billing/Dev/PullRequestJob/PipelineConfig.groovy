@@ -1,5 +1,3 @@
-println "Ejecutando ${env.JOB_NAME}"
-println "Ejecutando 2 ${env.WORKSPACE}"
 println("script directory: ${new File(__FILE__).parent}")
 job_path = "${new File(__FILE__).parent}"
 jenkinsfile = job_path + "/Jenkinsfile"
