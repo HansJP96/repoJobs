@@ -16,7 +16,7 @@ pipelineJob("DIRECTORY_PATH/Publish") {
             }
         }
 		cps {
-            scriptPath (SEED_JOB.lastBuild.checkouts[0].workspace + "/" + "JENKINSFILE_PATH")
+            script(readFileFromWorkspace(SEED_JOB.lastBuild.checkouts[0].workspace + "/" + "JENKINSFILE_PATH"))
             sandbox()
         }
     }
