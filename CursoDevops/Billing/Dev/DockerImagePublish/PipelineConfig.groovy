@@ -1,12 +1,14 @@
-import jenkins.model.*
+println "Ejecutando ${env.JOB_NAME}"
+println "Ejecutando 2 ${env.WORKSPACE}"
+println("script directory: ${new File(__FILE__).parent}")
+job_path = "${new File(__FILE__).parent}"
+jenkinsfile = job_path + "/Jenkinsfile"
 
-def jobName = binding.variables['JOB_NAME']
-def jenkinsfilePath = binding.variables['JENKINSFILE_PATH'] ?: "Jenkinsfile"
-
-
-pipelineJob(jobName) {
-    description("Pipeline configurado dinámicamente usando Groovy para: ${jobName}")
+// Creación del pipeline job usando el nombre proporcionado
+pipelineJob("${env.JOB_NAME}") {
+    description("Pipeline configurado dinámicamente")
     
+    // Configurar el SCM para que apunte a tu repositorio
     definition {
         cpsScm {
             scm {
@@ -18,11 +20,11 @@ pipelineJob(jobName) {
                     branch("main") // Rama que deseas escuchar
                 }
             }
-            scriptPath(jenkinsfilePath) // Ruta al Jenkinsfile dentro del repositorio
+            scriptPath(jenkinsfile) // Ruta al Jenkinsfile dentro del repositorio
         }
     }
     
-  
+    // Triggers que activarán el pipeline
     triggers {
         githubPush() // Trigger para GitHub Push (cuando se haga un push en el repositorio)
     }
