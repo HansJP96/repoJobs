@@ -1,3 +1,4 @@
+'''
 println "Ejecutando ${env.JOB_NAME}"
 println "Ejecutando 2 ${env.WORKSPACE}"
 println("script directory: ${new File(__FILE__).parent}")
@@ -42,3 +43,4 @@ pipelineJob("${env.JOB_NAME}") {
         }
     }
 }
+'''
