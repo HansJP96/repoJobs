@@ -1,4 +1,5 @@
-println("script directory: ${new File(__FILE__).parent}")
+println(SEED_JOB.lastBuild.checkouts[0].workspace)
+
 job_path = "${new File(__FILE__).parent}"
 jenkinsfile = job_path + "/Jenkinsfile"
 
