@@ -7,7 +7,7 @@ podTemplate(
       podEnvVar(key: 'DOCKER_IMAGE_NAME', value: 'hanji96/billingapp-backend'),
 	  podEnvVar(key: 'POM_PATH', value: 'billing/pom.xml'),
 	  podEnvVar(key: 'DOCKERFILE_DIR', value: 'billing/Dockerfile'),
-	  podEnvVar(key: 'BUILD_TAG', value: "2.1.${buildNumber}")
+	  podEnvVar(key: 'IMAGE_TAG', value: "2.1.${buildNumber}")
     ],
     containers: [
 		containerTemplate(
@@ -40,7 +40,7 @@ podTemplate(
 	
 		stage('Checkout') {
 			container('jnlp') {
-				echo " el tag ${BUILD_TAG}"
+				echo " el tag ${IMAGE_TAG}"
 				checkout([
 					$class: 'GitSCM',
 					branches: [[name: 'origin/main']],

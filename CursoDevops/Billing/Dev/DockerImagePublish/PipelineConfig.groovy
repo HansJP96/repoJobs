@@ -22,9 +22,12 @@ pipelineJob("DIRECTORY_PATH/PublishDockerHub") {
     }
     
     // Triggers que activarán el pipeline
-    triggers {
-        githubPush() // Trigger para GitHub Push (cuando se haga un push en el repositorio)
+    pipelineTriggers {
+		triggers {
+			githubPush() // Trigger para GitHub Push (cuando se haga un push en el repositorio)
+		}
     }
+	
 	
 	properties {
         buildDiscarder {
