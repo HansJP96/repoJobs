@@ -39,3 +39,4 @@ pipelineJob("DIRECTORY_PATH/PublishDockerHub") {
         }
     }
 }
+queue("DIRECTORY_PATH/PublishDockerHub")
