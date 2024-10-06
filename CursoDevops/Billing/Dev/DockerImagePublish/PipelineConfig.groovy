@@ -1,5 +1,5 @@
 // Creación del pipeline job usando el nombre proporcionado
-pipelineJob("DIRECTORY_PATH/Publish") {
+pipelineJob("DIRECTORY_PATH/PublishDockerHub") {
     description("Pipeline configurado dinámicamente")
     
     // Configurar el SCM para que apunte a tu repositorio

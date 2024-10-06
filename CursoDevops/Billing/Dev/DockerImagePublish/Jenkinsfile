@@ -1,69 +1,75 @@
-pipeline {
-    agent {
-    	kubernetes {
-      		yamlFile 'prueba.yaml'
-      		retries 2
-    	}
-    }
+def buildNumber = env.BUILD_NUMBER.split('-')[-1]
 
-    environment {
-        DOCKER_IMAGE_NAME = 'hanji96/billingapp-backend'
-        POM_PATH = 'billing/pom.xml'
-        DOCKERFILE_DIR = 'billing/Dockerfile'
-        BUILD_TAG = "2.1.${env.BUILD_NUMBER}"
-    }
-
-    triggers {
-        githubPush()
-    }
-
-    stages {
-        stage('Checkout') {
-            steps {
-                checkout([
-                    $class: 'GitSCM',
-                    branches: [[name: 'origin/main']],
-                    userRemoteConfigs: [[
-                        url: 'https://github.com/HansJP96/practica_kubernetes1.git',
-                        credentialsId: 'GitHub_Autenticacion_SSH'
-                    ]],
-                    extensions: []
-                ])
-            }
-        }
-
-        stage('Build Project') {
-            steps {
-                container(name: 'maven') {
-                	sh 'ls -la'
-                    // Compila el proyecto sin ejecutar las pruebas
-                    sh """
-                        mvn clean package -DskipTests -f ${env.POM_PATH}
-                    """
-                }
-            }
-        }
-
-       
-		stage('Build with Kaniko') {
-  		environment {
-    		PATH = "/busybox:/kaniko:$PATH"
-  		}
-  			steps {
-    			container(name: 'kaniko', shell: '/busybox/sh') {
-		
-      			sh """#!/busybox/sh
-        			/kaniko/executor --dockerfile `pwd`/${env.DOCKERFILE_DIR} --context `pwd` --verbosity debug \
-        			--destination ${env.DOCKER_IMAGE_NAME}:${env.BUILD_TAG} --destination ${env.DOCKER_IMAGE_NAME}:latest
-      			"""
-    			}
-  			}
+podTemplate(
+    label: 'agent-billing-dev-publish',
+	inheritFrom: 'base-pod-template',
+	envVars: [
+      podEnvVar(key: 'DOCKER_IMAGE_NAME', value: 'hanji96/billingapp-backend'),
+	  podEnvVar(key: 'POM_PATH', value: 'billing/pom.xml'),
+	  podEnvVar(key: 'DOCKERFILE_DIR', value: 'billing/Dockerfile'),
+	  podEnvVar(key: 'BUILD_TAG', value: "2.1.${buildNumber}")
+    ],
+    containers: [
+		containerTemplate(
+			name: 'jnlp',
+			image: 'jenkins/inbound-agent:alpine-jdk17',
+			ttyEnabled: true,
+		),
+        containerTemplate(
+			name: 'maven', 
+			image: 'maven:3.9.9-eclipse-temurin-17-alpine',
+			ttyEnabled: true,
+			command: 'cat',
+		),
+        containerTemplate(
+		  name: 'kaniko',
+		  image: 'gcr.io/kaniko-project/executor:debug',
+		  command: '/busybox/cat',
+		  ttyEnabled: true
+		)
+    ],
+	volumes: [
+		secretVolume(
+		  secretName: 'secret-dockerhub', 
+		  mountPath: '/kaniko/.docker',
+		)
+    ]
+)
+{
+	node('agent-billing-dev-publish'){
+	
+		stage('Checkout') {
+			container('jnlp') {
+				echo " el tag ${BUILD_TAG}"
+				checkout([
+					$class: 'GitSCM',
+					branches: [[name: 'origin/main']],
+					userRemoteConfigs: [[
+						url: 'https://github.com/HansJP96/practica_kubernetes1.git',
+						credentialsId: 'GitHub_Autenticacion_SSH'
+					]],
+					extensions: []
+				])
+			}
 		}
-    }
-
-    post {
-        always {
-            cleanWs()
-        }
-    }
+		
+		stage('Build Project'){
+			container('maven'){
+				sh 'ls -la'
+				sh '''
+					mvn clean package -DskipTests -f ${POM_PATH} -B -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
+				'''
+			}
+		}
+		
+		stage('Build with Kaniko') {
+			container('kaniko') {
+				// Comando para ejecutar Kaniko
+				sh '''#!/busybox/sh
+					/kaniko/executor --dockerfile `pwd`/${DOCKERFILE_DIR} --context `pwd` --verbosity debug \
+					--destination ${DOCKER_IMAGE_NAME}:1.0.1 --destination ${DOCKER_IMAGE_NAME}:latest
+				'''
+			}
+		}
+	}
 }
