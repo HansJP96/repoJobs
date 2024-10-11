@@ -1,0 +1,132 @@
+podTemplate(
+    label: 'agent-timeoffapp-dev-pr',
+	inheritFrom: 'base-pod-template',
+    containers: [
+		containerTemplate(
+			name: 'jnlp',
+			image: 'jenkins/inbound-agent:alpine-jdk17',
+			ttyEnabled: true
+		),
+        containerTemplate(
+			name: 'node', 
+			image: 'node:13.13.0-alpine',
+			ttyEnabled: true,
+			command: 'cat',
+			envVars: [
+				containerEnvVar(key: 'USE_CHROME', value: '1'),
+				containerEnvVar(key: 'USE_GRID', value: '1'),
+				containerEnvVar(key: 'PORT', value: '3000')
+			]
+		),
+        containerTemplate(
+		  name: 'selenium-browser',
+		  image: 'selenium/standalone-chrome:110.0',
+		  ttyEnabled: true,
+		  command: 'cat'
+		)
+    ]
+)
+{
+	node('agent-timeoffapp-dev-pr'){
+		try {
+			stage('Checkout Repository') {
+				container('jnlp') {
+				
+					notifyGitHub('Checkout Repo', 'pending')
+					echo 'Descargando repositorio ...'
+					
+					checkout([
+						$class: 'GitSCM',
+						branches: [[name: 'origin/feature/*']],
+						userRemoteConfigs: [[
+							name: 'origin',
+							url: 'https://github.com/HansJP96/Sofka-DevOps-Test.git',
+							credentialsId: 'GitHub_Autenticacion_SSH',
+							refspec: '+refs/pull/*/head:refs/remotes/origin/pr/*'
+						]],
+						extensions: [
+							[$class: 'WipeWorkspace'],
+							[$class: 'GitSCMStatusChecksExtension', name: 'Jenkins', skip: false, unstableBuildNeutral: false, suppressLogs: false, skipProgressUpdates: false]
+						]
+					])
+					notifyGitHub('Checkout Repo', 'success')
+				}
+			}
+			
+			stage('Install Dependencies') {
+				container('node') {
+				
+					notifyGitHub('Installing Dependencies', 'pending')
+					
+					switch (PR_CURRENT_STATUS) {
+						case 'opened':
+						case 'reopened':
+						case 'synchronize':
+							echo "New PR created/updated: ${PR_TITLE}"
+							echo "Installing ..."
+							
+							sh 'npm install'
+							
+							notifyGitHub('Installing Dependencies', 'success')
+							
+							break
+						default:
+							echo "Condition not met: Skipping this build"
+							error("Skipping build")
+					}
+				}
+			}
+
+			stage('Start Test Server') {
+				container('node') {
+				
+					notifyGitHub('Start Test Server', 'pending')
+					echo "Starting test server on port: $PORT"
+					
+					sh 'npm start'
+					
+					sh '''					
+						for i in $(seq 1 10); do
+							if wget --spider http://localhost:$PORT/login; then
+								echo "El servidor está ejecutando correctamente"
+								exit 0
+							else
+								echo "Intento $i: El servidor no está activo. Reintentando en 5 segundos..."
+								sleep 5
+							fi
+						done
+						echo "Error: El servidor no respondió después de 10 intentos."
+						exit 1
+					'''
+					
+					notifyGitHub('Start Test Server', 'success')
+				}
+			}
+
+			stage('Run Test') {
+				container('node') {
+					notifyGitHub('Running test', 'pending')
+					
+					sh 'npm test'
+					
+					notifyGitHub('Running test', 'success')
+				}
+			}
+		} catch (e) {
+            notifyGitHub('PullRequestJobCheck', 'failure')
+            throw e
+        } finally {
+            notifyGitHub('PullRequestJobCheck', 'success')
+        }
+	}
+}
+
+def notifyGitHub(String text, String status) {
+    step([$class: 'GitHubCommitStatusSetter',
+          commitShaSource: [$class: 'BuildDataRevisionShaSource'],
+          reposSource: [$class: 'AnyDefinedRepositorySource'],
+          contextSource: [$class: 'ManuallyEnteredCommitContextSource', context: text],
+          statusResultSource: [$class: 'ManuallyEnteredStatusResultSource', state: status],
+          statusBackrefSource: [$class: 'BuildRefBackrefSource']
+    ])
+}
