@@ -7,16 +7,16 @@ pipelineJob("DIRECTORY_PATH/PullRequest") {
 				genericTrigger {
 				   genericVariables {
 						genericVariable {
-							key("PR_TITLE")
-							value("\$.pullrequest.title")
-							expressionType("JSONPath") 
-							defaultValue("none")
+							key('PR_TITLE')
+							value('$.pullrequest.title')
+							expressionType('JSONPath') 
+							defaultValue('none')
 						}
 						genericVariable {
-							key("PR_CURRENT_STATUS")
-							value("\$.action")
-							expressionType("JSONPath") 
-							defaultValue("none")
+							key('PR_CURRENT_STATUS')
+							value('$.action')
+							expressionType('JSONPath')
+							defaultValue('none')
 						}
 					}
 					token('secrettoken')
@@ -24,8 +24,8 @@ pipelineJob("DIRECTORY_PATH/PullRequest") {
 					printContributedVariables(false)
 					printPostContent(false)
 					silentResponse(false)
-					regexpFilterText("\$PR_CURRENT_STATUS")
-					regexpFilterExpression("^opened|reopened|synchronize$")
+					regexpFilterText('$PR_CURRENT_STATUS')
+					regexpFilterExpression('^opened|reopened|synchronize$')
 				}
 			}
     	}
