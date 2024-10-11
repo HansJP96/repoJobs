@@ -4,20 +4,29 @@ pipelineJob("DIRECTORY_PATH/PullRequest") {
     properties {
 		pipelineTriggers {
 			triggers {
-				GenericTrigger(
-					genericVariables: [
-						[key: 'PR_TITLE', value: '$.pullrequest.title', defaultValue: 'null'],
-						[key: 'PR_CURRENT_STATUS', value: '$.action', defaultValue: 'none'],
-					],
-					regexpFilterText:'$PR_CURRENT_STATUS',
-					regexpFilterExpression:'^opened|reopened|synchronize$',
-					causeString: 'Generic Cause',
-					token: 'secrettoken',
-					tokenCredentialId: '',
-					printContributedVariables: false,
-					printPostContent: false,
-					silentResponse: false
-				)
+				genericTrigger {
+				   genericVariables {
+						genericVariable {
+							key("PR_TITLE")
+							value("\$.pullrequest.title")
+							expressionType("JSONPath") 
+							defaultValue("none")
+						}
+						genericVariable {
+							key("PR_CURRENT_STATUS")
+							value("\$.action")
+							expressionType("JSONPath") 
+							defaultValue("none")
+						}
+					}
+					token('secrettoken')
+					tokenCredentialId('')
+					printContributedVariables(false)
+					printPostContent(false)
+					silentResponse(false)
+					regexpFilterText("\$PR_CURRENT_STATUS")
+					regexpFilterExpression("^opened|reopened|synchronize$")
+				}
 			}
     	}
         buildDiscarder {
