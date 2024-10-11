@@ -28,12 +28,15 @@ podTemplate(
 )
 {
 	node('agent-timeoffapp-dev-pr'){
+	
+		def pipelineStatus = 'SUCCESS'
+		
 		try {
 			stage('Checkout Repository') {
 				container('jnlp') {
 				
-					notifyGitHub('Checkout Repo', 'pending')
-					echo 'Descargando repositorio ...'
+					notifyGitHub('Checkout Repo', 'PENDING')
+					echo 'Downloading Repository ...'
 					
 					checkout([
 						$class: 'GitSCM',
@@ -49,25 +52,21 @@ podTemplate(
 							[$class: 'GitSCMStatusChecksExtension', name: 'Jenkins', skip: false, unstableBuildNeutral: false, suppressLogs: false, skipProgressUpdates: false]
 						]
 					])
-					notifyGitHub('Checkout Repo', 'success')
 				}
 			}
 			
 			stage('Install Dependencies') {
 				container('node') {
-				
-					notifyGitHub('Installing Dependencies', 'pending')
+					notifyGitHub('Installing Dependencies', 'PENDING')
 					
 					switch (PR_CURRENT_STATUS) {
 						case 'opened':
 						case 'reopened':
 						case 'synchronize':
 							echo "New PR created/updated: ${PR_TITLE}"
-							echo "Installing ..."
+							echo "Installing dependencies ..."
 							
 							sh 'npm install'
-							
-							notifyGitHub('Installing Dependencies', 'success')
 							
 							break
 						default:
@@ -80,8 +79,8 @@ podTemplate(
 			stage('Start Test Server') {
 				container('node') {
 				
-					notifyGitHub('Start Test Server', 'pending')
-					echo "Starting test server on port: $PORT"
+					notifyGitHub('Start Test Server', 'PENDING')
+					echo "Starting app test server on port: $PORT"
 					
 					sh 'npm start'
 					
@@ -98,35 +97,40 @@ podTemplate(
 						echo "Error: El servidor no respondió después de 10 intentos."
 						exit 1
 					'''
-					
-					notifyGitHub('Start Test Server', 'success')
 				}
 			}
 
 			stage('Run Test') {
 				container('node') {
-					notifyGitHub('Running test', 'pending')
+				
+					notifyGitHub('Running test', 'PENDING')
+			
+					echo "Init test using standalone-chrome server"
 					
 					sh 'npm test'
-					
-					notifyGitHub('Running test', 'success')
 				}
 			}
 		} catch (e) {
-            notifyGitHub('PullRequestJobCheck', 'failure')
+			pipelineStatus = 'FAILURE'
+            notifyGitHub('Finished Pipeline', 'FAILURE')
             throw e
         } finally {
-            notifyGitHub('PullRequestJobCheck', 'success')
+			if (pipelineStatus == 'SUCCESS') {
+				notifyGitHub('Pipeline', 'SUCCESS')  // Solo notifica éxito si no hubo errores
+			}
         }
 	}
 }
 
-def notifyGitHub(String text, String status) {
+def notifyGitHub(String msg, String status) {
     step([$class: 'GitHubCommitStatusSetter',
-          commitShaSource: [$class: 'BuildDataRevisionShaSource'],
-          reposSource: [$class: 'AnyDefinedRepositorySource'],
-          contextSource: [$class: 'ManuallyEnteredCommitContextSource', context: text],
-          statusResultSource: [$class: 'ManuallyEnteredStatusResultSource', state: status],
-          statusBackrefSource: [$class: 'BuildRefBackrefSource']
+		commitShaSource: [$class: 'BuildDataRevisionShaSource'],
+		reposSource: [$class: 'AnyDefinedRepositorySource'],
+		contextSource: [$class: 'ManuallyEnteredCommitContextSource', context: 'ci/jenkins-PR'],
+		statusBackrefSource: [$class: 'BuildRefBackrefSource'],
+		statusResultSource: [
+		  $class: 'ConditionalStatusResultSource',
+		  results: [[$class: 'AnyBuildResult', state: status, message: msg]]
+		]
     ])
 }
