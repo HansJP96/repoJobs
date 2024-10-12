@@ -8,13 +8,19 @@ pipelineJob("DIRECTORY_PATH/PullRequest") {
 				   genericVariables {
 						genericVariable {
 							key('PR_TITLE')
-							value('$.pullrequest.title')
+							value('$.pull_request.title')
 							expressionType('JSONPath') 
 							defaultValue('none')
 						}
 						genericVariable {
 							key('PR_CURRENT_STATUS')
 							value('$.action')
+							expressionType('JSONPath')
+							defaultValue('none')
+						}
+						genericVariable {
+							key('GITHUB_SHA')
+							value('$.pull_request.head.sha')
 							expressionType('JSONPath')
 							defaultValue('none')
 						}

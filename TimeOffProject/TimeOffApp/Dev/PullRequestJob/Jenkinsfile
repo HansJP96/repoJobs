@@ -35,6 +35,7 @@ podTemplate(
 			stage('Checkout Repository') {
 				container('jnlp') {
 				
+					sh 'printenv'
 					notifyGitHub('Checkout Repo', 'PENDING')
 					echo 'Downloading Repository ...'
 					
@@ -48,8 +49,7 @@ podTemplate(
 							refspec: '+refs/pull/*/head:refs/remotes/origin/pr/*'
 						]],
 						extensions: [
-							[$class: 'WipeWorkspace'],
-							[$class: 'GitSCMStatusChecksExtension', name: 'Jenkins', skip: false, unstableBuildNeutral: false, suppressLogs: false, skipProgressUpdates: false]
+							[$class: 'WipeWorkspace']
 						]
 					])
 				}
@@ -123,14 +123,18 @@ podTemplate(
 }
 
 def notifyGitHub(String msg, String status) {
-    step([$class: 'GitHubCommitStatusSetter',
-		commitShaSource: [$class: 'BuildDataRevisionShaSource'],
-		reposSource: [$class: 'AnyDefinedRepositorySource'],
-		contextSource: [$class: 'ManuallyEnteredCommitContextSource', context: 'ci/jenkins-PR'],
-		statusBackrefSource: [$class: 'BuildRefBackrefSource'],
-		statusResultSource: [
-		  $class: 'ConditionalStatusResultSource',
-		  results: [[$class: 'AnyBuildResult', state: status, message: msg]]
-		]
-    ])
+    if (env.PR_TITLE || env.GIT_COMMIT) { 
+        step([$class: 'GitHubCommitStatusSetter',
+            commitShaSource: [$class: 'ManuallyEnteredShaSource', sha: env.GITHUB_SHA],
+            reposSource: [$class: 'ManuallyEnteredRepositorySource', url: https://github.com/HansJP96/Sofka-DevOps-Test],
+            contextSource: [$class: 'ManuallyEnteredCommitContextSource', context: 'ci/jenkins-PR'],
+            statusBackrefSource: [$class: 'BuildRefBackrefSource'],
+            statusResultSource: [
+              $class: 'ConditionalStatusResultSource',
+              results: [[$class: 'AnyBuildResult', state: status, message: msg]]
+            ]
+        ])
+    } else {
+        echo "No PR or commit associated. Skipping GitHub status update."
+    }
 }
