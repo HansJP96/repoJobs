@@ -21,8 +21,7 @@ podTemplate(
         containerTemplate(
 		  name: 'selenium-browser',
 		  image: 'selenium/standalone-chrome:110.0',
-		  ttyEnabled: true,
-		  command: 'cat'
+		  ttyEnabled: true
 		)
     ]
 )
@@ -110,7 +109,7 @@ podTemplate(
 					
 					echo "Check standalone-chrome server available"
 					
-					sh 'wget http://localhost:4444/wd/hub/status'
+					sh 'wget -qO- http://localhost:4444/wd/hub/status'
 			
 					echo "Init test using standalone-chrome server"
 					
