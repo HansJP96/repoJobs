@@ -1,3 +1,5 @@
+notifyGitHub('Starting Pipeline', 'PENDING')
+
 podTemplate(
     label: 'agent-timeoffapp-dev-pr',
 	inheritFrom: 'base-pod-template',
@@ -129,7 +131,7 @@ def notifyGitHub(String msg, String status) {
     if (env.PR_TITLE || env.GIT_COMMIT) { 
         step([$class: 'GitHubCommitStatusSetter',
             commitShaSource: [$class: 'ManuallyEnteredShaSource', sha: env.GITHUB_SHA],
-            reposSource: [$class: 'ManuallyEnteredRepositorySource', url: https://github.com/HansJP96/Sofka-DevOps-Test],
+            reposSource: [$class: 'ManuallyEnteredRepositorySource', url: 'https://github.com/HansJP96/Sofka-DevOps-Test'],
             contextSource: [$class: 'ManuallyEnteredCommitContextSource', context: 'ci/jenkins-PR'],
             statusBackrefSource: [$class: 'BuildRefBackrefSource'],
             statusResultSource: [
