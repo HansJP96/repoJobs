@@ -1,5 +1,3 @@
-notifyGitHub('Starting Pipeline', 'PENDING')
-
 podTemplate(
     label: 'agent-timeoffapp-dev-pr',
 	inheritFrom: 'base-pod-template',
