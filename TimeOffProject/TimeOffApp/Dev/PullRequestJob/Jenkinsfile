@@ -35,7 +35,6 @@ podTemplate(
 			stage('Checkout Repository') {
 				container('jnlp') {
 				
-					sh 'printenv'
 					notifyGitHub('Checkout Repo', 'PENDING')
 					echo 'Downloading Repository ...'
 					
@@ -57,6 +56,8 @@ podTemplate(
 			
 			stage('Install Dependencies') {
 				container('node') {
+				
+					sh 'printenv'
 					notifyGitHub('Installing Dependencies', 'PENDING')
 					
 					switch (PR_CURRENT_STATUS) {
@@ -66,7 +67,9 @@ podTemplate(
 							echo "New PR created/updated: ${PR_TITLE}"
 							echo "Installing dependencies ..."
 							
-							sh 'npm install'
+							sh 'apk add --no-cache python2 make'
+							sh 'npm run preinstall'
+							sh 'npm install --loglevel verbose'
 							
 							break
 						default:
@@ -80,13 +83,13 @@ podTemplate(
 				container('node') {
 				
 					notifyGitHub('Start Test Server', 'PENDING')
-					echo "Starting app test server on port: $PORT"
+					echo "Starting app test server on port: ${PORT}"
 					
 					sh 'npm start'
 					
 					sh '''					
 						for i in $(seq 1 10); do
-							if wget --spider http://localhost:$PORT/login; then
+							if wget --spider http://localhost:${PORT}/login; then
 								echo "El servidor está ejecutando correctamente"
 								exit 0
 							else
@@ -116,7 +119,7 @@ podTemplate(
             throw e
         } finally {
 			if (pipelineStatus == 'SUCCESS') {
-				notifyGitHub('Pipeline', 'SUCCESS')  // Solo notifica éxito si no hubo errores
+				notifyGitHub('Finished Pipeline', 'SUCCESS')  // Solo notifica éxito si no hubo errores
 			}
         }
 	}
