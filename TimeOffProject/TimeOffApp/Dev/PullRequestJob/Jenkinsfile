@@ -83,9 +83,9 @@ podTemplate(
 				container('node') {
 				
 					notifyGitHub('Start Test Server', 'PENDING')
-					echo "Starting app test server on port: ${PORT}"
+					sh 'echo "Starting app test server on port: ${PORT}"'
 					
-					sh 'npm start'
+					sh 'nohup npm start &'
 					
 					sh '''					
 						for i in $(seq 1 10); do
@@ -107,6 +107,10 @@ podTemplate(
 				container('node') {
 				
 					notifyGitHub('Running test', 'PENDING')
+					
+					echo "Check standalone-chrome server available"
+					
+					sh 'wget http://localhost:4444/wd/hub/status'
 			
 					echo "Init test using standalone-chrome server"
 					
