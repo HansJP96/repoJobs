@@ -11,7 +11,7 @@ podTemplate(
 			name: 'jnlp',
 			image: 'jenkins/inbound-agent:alpine-jdk17',
 			ttyEnabled: true,
-		)
+		),
         containerTemplate(
 		  name: 'kaniko',
 		  image: 'gcr.io/kaniko-project/executor:debug',
@@ -42,8 +42,7 @@ podTemplate(
 						credentialsId: 'GitHub_Autenticacion_SSH'
 					]],
 					extensions: [
-						[$class: 'WipeWorkspace'],
-						[$class: 'GitSCMStatusChecksExtension', name: 'ci/jenkins-Publish', skip: false, unstableBuildNeutral: false, suppressLogs: false, skipProgressUpdates: false]
+						[$class: 'WipeWorkspace']
 					]
 				])
 			}
