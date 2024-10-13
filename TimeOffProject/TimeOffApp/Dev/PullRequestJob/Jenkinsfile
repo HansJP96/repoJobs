@@ -68,7 +68,7 @@ podTemplate(
 							
 							sh 'apk add --no-cache python2 make'
 							sh 'npm run preinstall'
-							sh 'npm install --loglevel verbose'
+							sh 'npm install --loglevel info'
 							
 							break
 						default:
